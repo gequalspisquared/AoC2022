@@ -1,49 +1,41 @@
 #include <iostream>
 #include <fstream>
-#include <vector>
 #include <memory>
-#include <stddef.h>
+#include <vector>
+#include <string>
 
 class Directory
 {
 public:
     Directory *parent;
-    std::vector<Directory *> subdirs;
+    std::vector<std::unique_ptr<Directory>> subdirs;
     std::string name;
-    size_t size; // does not include subdir sizes
+    size_t size;
 
-    Directory() 
+    Directory()
     {
         size = 0;
         parent = nullptr;
         name = "";
     }
 
-    const size_t computeTotalSize() const
+    void addSubDirectory(const std::string &name)
+    {
+        std::unique_ptr<Directory> newSubDirectory = std::make_unique<Directory>();
+        newSubDirectory->name = name;
+        newSubDirectory->parent = this;
+        subdirs.push_back(std::move(newSubDirectory));
+    }
+
+    size_t computeTotalSize() const
     {
         size_t totalSize = size;
-        for (const auto dir : subdirs)
+        for (const auto& dir : subdirs)
             totalSize += dir->computeTotalSize();
         return totalSize;
     }
 
-    void addSubDirectory(const std::string &newDirectoryName)
-    {
-        Directory *newSubDirectory = new Directory();
-        newSubDirectory->name = newDirectoryName;
-        newSubDirectory->parent = this;
-        subdirs.push_back(newSubDirectory);
-    }
-
-    void deleteSubDirectories()
-    {
-        for (auto dir : subdirs) {
-            dir->deleteSubDirectories();
-            delete dir;
-        }
-    }
-
-    size_t findDirectory(const std::string &name) 
+    size_t findDirectory(const std::string &name) const
     {
         for (size_t i = 0; i < subdirs.size(); i++)
             if (subdirs[i]->name == name) return i;
@@ -57,8 +49,8 @@ size_t sizeofSmallestDirectoryToDelete(const Directory *head,
                                        size_t currentSmallest = SIZE_MAX)
 {
     size_t smallest = currentSmallest;
-    for (const auto dir : head->subdirs) {
-        size_t otherSmallest = sizeofSmallestDirectoryToDelete(dir, sizeNeeded, smallest);
+    for (const auto& dir : head->subdirs) {
+        size_t otherSmallest = sizeofSmallestDirectoryToDelete(dir.get(), sizeNeeded, smallest);
         if (otherSmallest < smallest) smallest = otherSmallest;
     }
 
@@ -67,7 +59,7 @@ size_t sizeofSmallestDirectoryToDelete(const Directory *head,
     return smallest;
 }
 
-int main(void) 
+int main()
 {
     std::ifstream commandsFile("inputs/d7.txt");
     std::string command, skip, nextDirectory;
@@ -88,7 +80,7 @@ int main(void)
             cd = false;
             continue;
         } else if (cd) {
-            currentDir = currentDir->subdirs[currentDir->findDirectory(nextDirectory)];
+            currentDir = currentDir->subdirs[currentDir->findDirectory(nextDirectory)].get();
             cd = false;
             continue;
         }
@@ -107,6 +99,4 @@ int main(void)
     std::cout << "Space needed: " << numNeeded << "\n";
     std::cout << "Size of smallest directory to delete: " 
               << sizeofSmallestDirectoryToDelete(&home, numNeeded) << "\n";
-
-    home.deleteSubDirectories();
 }
