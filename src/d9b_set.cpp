@@ -2,7 +2,6 @@
 #include <fstream>
 #include <unordered_set>
 #include <array>
-#include <algorithm>
 #include <string>
 
 template<typename T>
