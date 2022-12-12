@@ -27,7 +27,6 @@ public:
 int32_t minStepsToTop(const std::vector<std::vector<int32_t>> &heightMap, size_t width, size_t height,
                       const Point &startingPoint, const Point &endingPoint)
 {
-    // int32_t steps = 0;
     std::vector<std::vector<size_t>> dist(height, std::vector<size_t>(width));
     for (auto& row : dist)
         for (auto& d : row)
